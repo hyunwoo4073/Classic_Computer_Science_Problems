@@ -1,5 +1,6 @@
 from enum import IntEnum
-from typing import Tuple, List
+from typing import Tuple, List, Callable, Any
+import time
 
 Nucleotide: IntEnum = IntEnum('Nucleotide', ('A', 'C', 'G', 'T'))
 Codon = Tuple[Nucleotide, Nucleotide, Nucleotide] # 코돈 타입 alias
@@ -43,7 +44,23 @@ def binary_contains(gene: Gene, key_codon: Codon) -> bool:
             return True
     return False
 
+def benchmark(func: Callable[[], Any], repeat: int = 1) -> float:
+    start = time.perf_counter()
+    for _ in range(repeat):
+        func()
+    end = time.perf_counter()
+    return (end - start) / repeat
+
 # 파이썬 표준 라이브러리 bisect 모듈을 사용하여 이진 검색 가능
 my_sorted_gene: Gene = sorted(my_gene)
 print(binary_contains(my_sorted_gene, acg))
 print(binary_contains(my_sorted_gene, gat))
+
+
+# 숫자 100만 개 선형 검색 및 이진 검색 비교
+digit_list = [i for i in range(1, 1000000)]
+test_n_small = 30
+t1 = benchmark(lambda: linear_contains(digit_list, 900000), repeat=1)
+print(f"linear_contains({test_n_small}) 1회 평균: {t1 * 1000:.6f} ms")
+t2 = benchmark(lambda: binary_contains(digit_list, 900000), repeat=1)
+print(f"binary_contains({test_n_small}) 1회 평균: {t2 * 1000:.6f} ms")
