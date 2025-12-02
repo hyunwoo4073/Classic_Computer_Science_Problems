@@ -4,7 +4,13 @@ from edge import Edge
 V = TypeVar('V') # 그래프 정점(vertice) 타입
 
 class Graph(Generic[V]):
-    def __init__(self, vertices: List[V] = []) -> None:
+    # def __init__(self, vertices: List[V] = []) -> None:
+    #     self._vertices: List[V] = vertices
+    #     self._edges: List[List[Edge]] = [[] for _ in vertices]
+
+    def __init__(self, vertices: List[V] = None) -> None:
+        if vertices is None:
+            vertices = []
         self._vertices: List[V] = vertices
         self._edges: List[List[Edge]] = [[] for _ in vertices]
 
@@ -69,44 +75,96 @@ class Graph(Generic[V]):
             desc += f"{self.vertex_at(i)} -> {self.neighbors_for_index(i)}\n"
         return desc
 
+    def remove_vertex(self, index: int) -> None:
+        """index 위치의 정점을 제거하고,
+        그 정점과 연결된 에지 및 인덱스도 모두 정리한다."""
+        if index < 0 or index >= self.vertex_count:
+            raise IndexError("vertex index out of range")
+
+        # 1) 정점 제거
+        self._vertices.pop(index)
+
+        # 2) 해당 정점의 에지 리스트 제거
+        self._edges.pop(index)
+
+        # 3) 나머지 에지 리스트에서:
+        #    - 삭제된 정점과 연결된 에지 제거
+        #    - index보다 큰 정점을 가리키는 u, v 인덱스는 1씩 감소 조정
+        for u_idx in range(len(self._edges)):
+            new_adj: List[Edge] = []
+            for e in self._edges[u_idx]:
+                # 삭제된 정점(index)와 연결된 에지는 버림
+                if e.u == index or e.v == index:
+                    continue
+
+                new_u = e.u
+                new_v = e.v
+
+                # 정점 인덱스가 하나씩 당겨졌으므로,
+                # 삭제된 index보다 큰 인덱스는 -1 해줘야 함
+                if new_u > index:
+                    new_u -= 1
+                if new_v > index:
+                    new_v -= 1
+
+                # u는 항상 현재 리스트의 인덱스를 가리켜야 하므로 보정
+                # (지금 순회 중인 u_idx 자체도 index보다 크면 이미 -1 당겨진 상태)
+                new_adj.append(Edge(new_u, new_v))
+
+            self._edges[u_idx] = new_adj
+
+    def remove_edge_by_indices(self, u: int, v: int) -> None:
+        # u -> v 방향 에지 제거
+        self._edges[u] = [e for e in self._edges[u] if e.v != v]
+        # 무향 그래프이므로 v -> u 도 제거
+        self._edges[v] = [e for e in self._edges[v] if e.v != u]
+
+    def remove_edge_by_vertices(self, first: V, second: V) -> None:
+        u = self.index_of(first)
+        v = self.index_of(second)
+        self.remove_edge_by_indices(u, v)
+
 if __name__ == "__main__":
     city_graph: Graph[str] = Graph(["Seattle", "San Francisco", "Los Angeles", "Riverside", "Phoenix", "Chicago", "Boston", "New York", "Atlanta", "Miami", "Dallas", "Houston", "Detroit", "Philadelphia", "Washington"])
     city_graph.add_edge_by_vertices("Seattle", "Chicago")
     city_graph.add_edge_by_vertices("Seattle", "San Francisco")
-    city_graph.add_edge_by_vertices("San Francisco", "Riverside")
-    city_graph.add_edge_by_vertices("San Francisco", "Los Angeles")
-    city_graph.add_edge_by_vertices("Los Angeles", "Riverside")
-    city_graph.add_edge_by_vertices("Los Angeles", "Phoenix")
-    city_graph.add_edge_by_vertices("Riverside", "Phoenix")
-    city_graph.add_edge_by_vertices("Riverside", "Chicago")
-    city_graph.add_edge_by_vertices("Phoenix", "Dallas")
-    city_graph.add_edge_by_vertices("Phoenix", "Houston")
-    city_graph.add_edge_by_vertices("Dallas", "Chicago")
-    city_graph.add_edge_by_vertices("Dallas", "Atlanta")
-    city_graph.add_edge_by_vertices("Dallas", "Houston")
-    city_graph.add_edge_by_vertices("Houston", "Atlanta")
-    city_graph.add_edge_by_vertices("Houston", "Miami")
-    city_graph.add_edge_by_vertices("Atlanta", "Chicago")
-    city_graph.add_edge_by_vertices("Atlanta", "Washington")
-    city_graph.add_edge_by_vertices("Atlanta", "Miami")
-    city_graph.add_edge_by_vertices("Miami", "Washington")
-    city_graph.add_edge_by_vertices("Chicago", "Detroit")
-    city_graph.add_edge_by_vertices("Detroit", "Boston")
-    city_graph.add_edge_by_vertices("Detroit", "Washington")
-    city_graph.add_edge_by_vertices("Detroit", "New York")
-    city_graph.add_edge_by_vertices("Boston", "New York")
-    city_graph.add_edge_by_vertices("New York", "Philadelphia")
-    city_graph.add_edge_by_vertices("Philadelphia", "Washington")
+    city_graph.remove_edge_by_vertices("Seattle", "San Francisco")
+    city_graph.add_edge_by_vertices("Seattle", "San Francisco")
+    # city_graph.remove_vertex(1)
+    # city_graph.add_edge_by_vertices("San Francisco", "Riverside")
+    # city_graph.add_edge_by_vertices("San Francisco", "Los Angeles")
+    # city_graph.add_edge_by_vertices("Los Angeles", "Riverside")
+    # city_graph.add_edge_by_vertices("Los Angeles", "Phoenix")
+    # city_graph.add_edge_by_vertices("Riverside", "Phoenix")
+    # city_graph.add_edge_by_vertices("Riverside", "Chicago")
+    # city_graph.add_edge_by_vertices("Phoenix", "Dallas")
+    # city_graph.add_edge_by_vertices("Phoenix", "Houston")
+    # city_graph.add_edge_by_vertices("Dallas", "Chicago")
+    # city_graph.add_edge_by_vertices("Dallas", "Atlanta")
+    # city_graph.add_edge_by_vertices("Dallas", "Houston")
+    # city_graph.add_edge_by_vertices("Houston", "Atlanta")
+    # city_graph.add_edge_by_vertices("Houston", "Miami")
+    # city_graph.add_edge_by_vertices("Atlanta", "Chicago")
+    # city_graph.add_edge_by_vertices("Atlanta", "Washington")
+    # city_graph.add_edge_by_vertices("Atlanta", "Miami")
+    # city_graph.add_edge_by_vertices("Miami", "Washington")
+    # city_graph.add_edge_by_vertices("Chicago", "Detroit")
+    # city_graph.add_edge_by_vertices("Detroit", "Boston")
+    # city_graph.add_edge_by_vertices("Detroit", "Washington")
+    # city_graph.add_edge_by_vertices("Detroit", "New York")
+    # city_graph.add_edge_by_vertices("Boston", "New York")
+    # city_graph.add_edge_by_vertices("New York", "Philadelphia")
+    # city_graph.add_edge_by_vertices("Philadelphia", "Washington")
     print(city_graph)
 
-    # import  sys
-    # sys.path.insert(0, '..')
-    from generic_search import bfs, Node, node_to_path
+    # # import  sys
+    # # sys.path.insert(0, '..')
+    # from generic_search import bfs, Node, node_to_path
 
-    bfs_result: Optional[Node[V]] = bfs("Boston", lambda x: x == "Miami", city_graph.neighbors_for_vertex)
-    if bfs_result is None:
-        print("너비 우선 탐색으로 답을 찾을 수 없습니다.")
-    else:
-        path: List[V] = node_to_path(bfs_result)
-        print("보스턴에서 마이애미까지 최단 경로:")
-        print(path)
+    # bfs_result: Optional[Node[V]] = bfs("Boston", lambda x: x == "Miami", city_graph.neighbors_for_vertex)
+    # if bfs_result is None:
+    #     print("너비 우선 탐색으로 답을 찾을 수 없습니다.")
+    # else:
+    #     path: List[V] = node_to_path(bfs_result)
+    #     print("보스턴에서 마이애미까지 최단 경로:")
+    #     print(path)
