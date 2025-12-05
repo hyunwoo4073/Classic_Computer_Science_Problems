@@ -9,7 +9,7 @@ from chromosome import Chromosome
 C = TypeVar('C', bound=Chromosome) # 염색체 타입
 
 class GeneticAlgorithm(Generic[C]):
-    SelectionType = Enum("SelectionType", "ROULETTE TOURNAMENT")
+    SelectionType = Enum("SelectionType", "ROULETTE TOURNAMENT SOFT_TOURNAMENT")
 
     def __init__(self, initial_population: List[C], threshold: float, max_generations: int = 100, mutation_chance: float = 0.01, crossover_chance: float = 0.7,
     selection_type: SelectionType = SelectionType.TOURNAMENT) -> None:
@@ -31,6 +31,55 @@ class GeneticAlgorithm(Generic[C]):
         participants: List[C] = choices(self._population, k=num_participants)
         return tuple(nlargest(2, participants, key=self._fitness_key))
     
+    # 고급(소프트) 토너먼트 선택:
+    # - 참가자들을 fitness 기준으로 정렬
+    # - 순위(1등, 2등, 3등...)에 따라 가중치 부여
+    #   -> 1등이 가장 높은 확률이지만 2,3등도 non-zero 확률로 선택
+    def _pick_soft_tournament(
+        self,
+        num_participants: int,
+        pressure: float = 1.5,  # pressure↑면 1등 쏠림, pressure↓면 고르게
+    ) -> Tuple[C, C]:
+        # 토너먼트에 참가할 개체들을 무작위로 뽑음
+        participants: List[C] = choices(self._population, k=num_participants)
+        # fitness 기준 내림차순 정렬 (0번이 1등)
+        sorted_participants: List[C] = sorted(
+            participants, key=self._fitness_key, reverse=True
+        )
+        n = len(sorted_participants)
+
+        # 순위 기반 가중치: w(rank) = (n - rank)^pressure
+        # rank: 0(1등), 1(2등), ...
+        # → 1등이 제일 크지만, 2/3등도 꽤 의미 있는 확률을 가짐
+        weights: List[float] = [float((n - rank) ** pressure) for rank in range(n)]
+
+        # random.choices 로 확률적으로 두 부모 선택
+        # (같은 개체가 두 번 뽑일 수도 있지만, GA 에서는 보통 허용)
+        parents: Tuple[C, C] = tuple(
+            choices(sorted_participants, weights=weights, k=2)
+        )  # type: ignore
+        return parents
+
+    # # 집단을 새로운 세대로 교체
+    # def _reproduce_and_replace(self) -> None:
+    #     new_population: List[C] = []
+    #     # 새로운 세대가 채워질 때까지 반복
+    #     while len(new_population) < len(self._population):
+    #         # parents 중 두 부모를 선택
+    #         if self._selection_type == GeneticAlgorithm.SelectionType.ROULETTE:
+    #             parents: Tuple[C, C] = self._pick_roulette([x.fitness() for x in self._population])
+    #         else:
+    #             parents = self._pick_tournament(len(self._population) // 2)
+    #         # 두 부모를 크로스오버
+    #         if random() < self._crossover_chance:
+    #             new_population.extend(parents[0].crossover(parents[1]))
+    #         else:
+    #             new_population.extend(parents)
+    #     # 새 집단의 수가 홀수라면 이전 집단보다 하나 더 많으므로 제거
+    #     if len(new_population) > len(self._population):
+    #         new_population.pop()
+    #     self._population = new_population # 새 집단으로 참조를 변경
+
     # 집단을 새로운 세대로 교체
     def _reproduce_and_replace(self) -> None:
         new_population: List[C] = []
@@ -38,18 +87,25 @@ class GeneticAlgorithm(Generic[C]):
         while len(new_population) < len(self._population):
             # parents 중 두 부모를 선택
             if self._selection_type == GeneticAlgorithm.SelectionType.ROULETTE:
-                parents: Tuple[C, C] = self._pick_roulette([x.fitness() for x in self._population])
-            else:
+                parents: Tuple[C, C] = self._pick_roulette(
+                    [x.fitness() for x in self._population]
+                )
+            elif self._selection_type == GeneticAlgorithm.SelectionType.TOURNAMENT:
                 parents = self._pick_tournament(len(self._population) // 2)
+            else:
+                # SOFT_TOURNAMENT
+                parents = self._pick_soft_tournament(len(self._population) // 2)
+
             # 두 부모를 크로스오버
             if random() < self._crossover_chance:
                 new_population.extend(parents[0].crossover(parents[1]))
             else:
                 new_population.extend(parents)
+
         # 새 집단의 수가 홀수라면 이전 집단보다 하나 더 많으므로 제거
         if len(new_population) > len(self._population):
             new_population.pop()
-        self._population = new_population # 새 집단으로 참조를 변경
+        self._population = new_population  # 새 집단으로 참조를 변경
 
     # _mutation_chance 확률로 각 개발 염색체를 돌연변이함
     def _mutate(self) -> None:
