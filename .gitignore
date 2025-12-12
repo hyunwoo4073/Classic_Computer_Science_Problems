@@ -1,0 +1,104 @@
+# =========================================
+# Python 기본
+# =========================================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg
+*.egg-info/
+*.eggs/
+dist/
+build/
+develop-eggs/
+downloads/
+wheels/
+pip-wheel-metadata/
+*.spec
+
+# Byte-compiled / optimized / DLL files
+*.so
+
+# Unit test / coverage 관련
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# =========================================
+# 가상환경 (Python venv)
+# =========================================
+# 기본 venv 폴더명
+venv/
+env/
+ENV/
+.ve/
+.venv/
+
+# Conda 환경
+.conda/
+conda-env/
+env*/       # env, env37, env_gpu 등 다양한 이름 사용 방지
+
+# Poetry virtualenv
+.poetry/
+
+# pipenv 관련
+Pipfile.lock
+
+# =========================================
+# IDE / 에디터 설정 파일
+# =========================================
+
+# VSCode
+.vscode/
+.history/
+*.code-workspace
+
+# PyCharm / JetBrains
+.idea/
+*.iml
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# =========================================
+# OS별 불필요 파일
+# =========================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# =========================================
+# 로그 / 캐시
+# =========================================
+logs/
+*.log
+
+# Local config
+*.env
+.env.*
+
+# =========================================
+# Docker 관련 (선택)
+# =========================================
+docker-compose.override.yml
+
