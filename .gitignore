@@ -45,7 +45,7 @@ env/
 ENV/
 .ve/
 .venv/
-kmeansenv/
+kmeans/kmeansenv/
 
 # Conda 환경
 .conda/
