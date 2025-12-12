@@ -16,6 +16,7 @@ downloads/
 wheels/
 pip-wheel-metadata/
 *.spec
+*.pyc
 
 # Byte-compiled / optimized / DLL files
 *.so
@@ -44,6 +45,7 @@ env/
 ENV/
 .ve/
 .venv/
+kmeansenv/
 
 # Conda 환경
 .conda/
